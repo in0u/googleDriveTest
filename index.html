@@ -80,17 +80,9 @@
     // ----------------- Pickerのコールバック処理 -----------------
     function pickerCallback(data) {
         if (data.action == google.picker.Action.PICKED) {
-            const file = data.docs[0];
-            const output = document.getElementById('output');
-            output.innerHTML = `
-                <p><strong>ファイルが選択されました:</strong></p>
-                <ul>
-                    <li>名前: ${file.name}</li>
-                    <li>ID: ${file.id}</li>
-                    <li>URL: <a href="${file.url}" target="_blank">${file.url}</a></li>
-                </ul>
-            `;
-            // サーバーサイド処理が必要な場合は、ここでその処理を呼び出します
+            const fileId = data.docs[0].id;
+
+            // ★ ここでGAS WebアプリのURLにデータを送信する ★
             fetch('YOUR_GAS_WEB_APP_URL', {
                 method: 'POST',
                 headers: {
@@ -105,7 +97,8 @@
             .catch(error => {
                 document.getElementById('output').innerHTML = `<p>GASサーバーへの送信に失敗しました: ${error}</p>`;
             });
-        } else if (data.action == google.picker.Action.CANCEL) {
+
+        }  else if (data.action == google.picker.Action.CANCEL) {
             document.getElementById('output').innerHTML = '<p>ファイル選択がキャンセルされました。</p>';
         }
     }

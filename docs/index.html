@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+ 
+
+  <title>Drive.file スコープ動作確認</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    button { padding: 10px 15px; cursor: pointer; margin-right: 10px; }
+    #output { margin-top: 20px; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap; }
+    .section { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+  <h1>Google Drive API (`drive.file`) 動作確認</h1>
+
+  <div class="section">
+    <h2>1. Pickerによるファイル選択 (既存ファイルへのアクセス許可)</h2>
+    <p>Pickerでファイルを選択すると、そのファイルIDがアプリに共有され、アプリはそのファイルにアクセス可能になります。</p>
+    <button onclick="launchPicker()">Google Driveからファイルを選択</button>
+    <div id="selectedFileId">選択されたファイルID: (なし)</div>
+  </div>
+
+  <div class="section">
+    <h2>2. Drive APIによる新規ファイルアップロード</h2>
+    <p>ローカルからファイルを選択しアップロードします。これは `drive.file` スコープで許可される新規作成操作です。</p>
+    <form id="uploadForm">
+      <input type="file" name="fileToUpload" id="fileToUpload" required>
+      <button type="submit">ファイルをアップロード</button>
+    </form>
+    <div id="uploadStatus">ステータス: 待機中</div>
+    <div id="uploadedUrl">アップロードされたURL: (なし)</div>
+  </div>
+  
+  <div id="output"></div>
+
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script>
+    // ----------------------------------------------------------------------
+    // 認証情報とPickerの初期化
+    // ----------------------------------------------------------------------
+    const DEVELOPER_KEY = ''; // ここをあなたのAPIキーに置き換えてください
+    let accessToken = null;
+    
+    // GASのサーバーサイドからトークンを取得し、Pickerを初期化
+    google.script.run.withSuccessHandler(initPicker).getOAuthToken();
+
+    function initPicker(token) {
+      accessToken = token;
+      gapi.load('picker', { 'callback': onPickerApiLoad });
+    }
+
+    function onPickerApiLoad() {
+      console.log('Picker API loaded.');
+    }
+
+    // ----------------------------------------------------------------------
+    // 1. Pickerの起動とファイル選択
+    // ----------------------------------------------------------------------
+  // index.html の launchPicker 関数内 (修正後)
+
+    function launchPicker() {
+        if (!accessToken || !DEVELOPER_KEY) {
+            alert('トークンまたはAPIキーが設定されていません。');
+            return;
+        }
+
+        // ★ エラーログから取得した動的オリジンをセット (最終手段)
+        // 注意: この値はデプロイごとに変わる可能性があります。
+        const DYNAMIC_ORIGIN = ""; 
+        
+        // setOrigin には protocol + host の形式が必要です
+        const ORIGIN_URL = window.location.protocol + '//' + window.location.host;
+
+        const view = new google.picker.DocsView(google.picker.ViewId.DOCUMENTS)
+            .setMimeTypes('image/jpeg,image/png,application/pdf');
+
+        const picker = new google.picker.PickerBuilder()
+            .addView(view)
+            .setOAuthToken(accessToken)
+            .setDeveloperKey(DEVELOPER_KEY)
+            .setCallback(pickerCallback)
+            // setHostId は削除しました。setOrigin を残します。
+            // ※ 通常は ORIGIN_URL を使用しますが、今回は問題回避のため DYNAMIC_ORIGIN を試します。
+            .setOrigin(DYNAMIC_ORIGIN) 
+            .build();
+        
+        picker.setVisible(true);
+    }
+
+    function pickerCallback(data) {
+      if (data.action === google.picker.Action.PICKED) {
+        const file = data.docs[0];
+        document.getElementById('selectedFileId').innerText = '選択されたファイルID: ' + file.id;
+        // このファイルIDを使って、Drive APIでファイルの読み取り、編集、削除が可能になる
+        alert('ファイルが選択されました！\nファイルID: ' + file.id + '\n\nこの操作により、drive.fileスコープのアクセスが確立されました。');
+      } else if (data.action === google.picker.Action.CANCEL) {
+        document.getElementById('selectedFileId').innerText = '選択がキャンセルされました。';
+      }
+    }
+
+    // ----------------------------------------------------------------------
+    // 2. Drive APIによる新規ファイルアップロード
+    // ----------------------------------------------------------------------
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const fileInput = document.getElementById('fileToUpload');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('アップロードするファイルを選択してください。');
+        return;
+      }
+      
+      document.getElementById('uploadStatus').innerText = 'ステータス: アップロード中...';
+
+      // FormDataを作成し、ファイルを追加
+      const formData = new FormData();
+      formData.append('fileToUpload', file);
+
+      // GASのサーバーサイド関数を呼び出し、ファイルをアップロード
+      google.script.run
+        .withSuccessHandler(onUploadSuccess)
+        .withFailureHandler(onUploadFailure)
+        .uploadFile(formData);
+    });
+
+    function onUploadSuccess(url) {
+      document.getElementById('uploadStatus').innerText = 'ステータス: アップロード完了！';
+      document.getElementById('uploadedUrl').innerHTML = 'アップロードされたURL: <a href="' + url + '" target="_blank">' + url + '</a>';
+    }
+
+    function onUploadFailure(error) {
+      document.getElementById('uploadStatus').innerText = 'ステータス: アップロード失敗！';
+      document.getElementById('uploadedUrl').innerText = 'エラー: ' + error;
+    }
+
+  </script>
+</body>
+</html>

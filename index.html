@@ -91,6 +91,20 @@
                 </ul>
             `;
             // サーバーサイド処理が必要な場合は、ここでその処理を呼び出します
+            fetch('YOUR_GAS_WEB_APP_URL', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ fileId: fileId })
+            })
+            .then(response => response.text())
+            .then(result => {
+                document.getElementById('output').innerHTML = `<p>GASサーバーへの送信が完了しました: ${result}</p>`;
+            })
+            .catch(error => {
+                document.getElementById('output').innerHTML = `<p>GASサーバーへの送信に失敗しました: ${error}</p>`;
+            });
         } else if (data.action == google.picker.Action.CANCEL) {
             document.getElementById('output').innerHTML = '<p>ファイル選択がキャンセルされました。</p>';
         }

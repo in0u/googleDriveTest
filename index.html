@@ -64,7 +64,8 @@
 
         const view = new google.picker.DocsView(google.picker.ViewId.DOCUMENTS)
             .setMimeTypes('image/jpeg,image/png,application/pdf');
-
+            .setIncludeFolders(true);
+            .setSelectFolderEnabled(false);
         const picker = new google.picker.PickerBuilder()
             .addView(view)
             .setOAuthToken(accessToken) // ★ GISで取得したトークンを使用 ★
@@ -72,6 +73,8 @@
             .setCallback(pickerCallback)
             // ★ setOriginでGitHub Pagesのドメインを正確に渡す ★
             .setOrigin(window.location.protocol + '//' + window.location.host)
+            .enableFeature(google.picker.Feature.NAV_HIDDEN)
+      			.hideTitleBar()
             .build();
         
         picker.setVisible(true);

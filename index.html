@@ -73,8 +73,6 @@
             .setCallback(pickerCallback)
             // ★ setOriginでGitHub Pagesのドメインを正確に渡す ★
             .setOrigin(window.location.protocol + '//' + window.location.host)
-            .enableFeature(google.picker.Feature.NAV_HIDDEN)
-      			.hideTitleBar()
             .build();
         
         picker.setVisible(true);

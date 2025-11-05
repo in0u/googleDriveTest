@@ -64,8 +64,6 @@
 
         const view = new google.picker.DocsView(google.picker.ViewId.DOCUMENTS)
             .setMimeTypes('image/jpeg,image/png,application/pdf');
-            .setIncludeFolders(true);
-            .setSelectFolderEnabled(false);
         const picker = new google.picker.PickerBuilder()
             .addView(view)
             .setOAuthToken(accessToken) // ★ GISで取得したトークンを使用 ★
